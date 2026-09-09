@@ -131,7 +131,7 @@ int main()
 try
 {
 	while(cin)
-		cout << expression() << '\n';	
+		cout << "=" << expression() << '\n';	
 }
 catch(exception& e)
 {
