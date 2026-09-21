@@ -196,15 +196,16 @@ try
 	double val = 0;
 	while(cin)
 	{
+		cout << "> ";		//print promt
 		Token t = ts.get();
+		while(t.kind == ';')
+			t = ts.get();	//eat ';'
 		if(t.kind == 'q')	//'q' for quit
-			 break;
-		if(t.kind == ';')	//';' for "print now"
-			cout << "=" << val << '\n';
-		else
-			ts.putback(t);
-		val = expression();
-	}	
+			 return 0;
+		ts.putback(t);
+		cout << "= " << expression() << '\n';
+	}
+	return 0;
 }
 catch(exception& e)
 {
