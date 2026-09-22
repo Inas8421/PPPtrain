@@ -69,6 +69,7 @@ Token Token_stream::get()
 		case '-':
 		case '*':
 		case '/':
+		case '%':
 			return Token{ch}; //let each character represent itself
 		case '.':
 		case '0':
@@ -123,6 +124,10 @@ double primary()
 		}
 		case '8':	// we use '8' to represent number
 			return t.value;
+		case '-':
+			return - primary();
+		case '+':
+			return primary();
 		default:
 			error("primary expected !");
 			//compilation warning here, because of no return value
@@ -151,6 +156,22 @@ double term()
 					error("division by zero !");
 				left /= d;
 				t = ts.get();
+				break;
+			}
+			case '%':
+			{
+				double d = primary();
+				if(d == 0)
+					error("%: division by zero !");
+				left = fmod(left, d);
+				t = ts.get();
+				
+//				int i1 = narrow<int>(left);
+//				int i2 = narrow<int>(primary());
+//				if(i2 == 0)
+//					error("%: division by zero !");
+//				left = i1%i2;
+//				t = ts.get();
 				break;
 			}
 			default:
