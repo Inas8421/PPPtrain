@@ -7,6 +7,7 @@ constexpr char quit = 'q';	//t.kind == quit means that t is a quit Token
 constexpr char print = ';';	//t.kind == print means that t is a print Token
 constexpr string prompt = "> ";
 constexpr string result = "= ";	//used to indicate that what follows is a result
+
 //-----------------------------------------------------------------------
 
 class Token
@@ -64,12 +65,12 @@ Token Token_stream::get()
 	}
 
 	char ch;
-	if(!(cin >> ch))		//note that >> skips whitespace (space, newline, tab
+	if(!(cin >> ch))	//note that >> skips whitespace (space, newline, tab
 		error("no input");
 	switch(ch)
 	{
-		case ';': //for "print"
-		case 'q': //for "quit"
+		case print: //for "print"
+		case quit: //for "quit"
 		case '(':
 		case ')':
 		case '+':
@@ -78,7 +79,7 @@ Token Token_stream::get()
 		case '/':
 		case '%':
 			return Token{ch}; //let each character represent itself
-		case '.':
+		case '.':	//a floating-point literal can start with a dot
 		case '0':
 		case '1':
 		case '2':
@@ -218,10 +219,9 @@ double expression()
 
 //----------------------------------------------------------------
 
-int main()
-try
+//Calculation loop
+void calculate()
 {
-	double val = 0;
 	while(cin)
 	{
 		cout << prompt;		//print promt
@@ -229,10 +229,18 @@ try
 		while(t.kind == print)
 			t = ts.get();	//eat ';'
 		if(t.kind == quit)	//'q' for quit
-			 return 0;
+			 return;
 		ts.putback(t);
 		cout << result << expression() << '\n';
 	}
+}
+
+//----------------------------------------------------------------
+
+int main()
+try
+{
+	calculate();
 	return 0;
 }
 catch(exception& e)
