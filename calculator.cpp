@@ -2,6 +2,13 @@
 
 //-----------------------------------------------------------------------
 
+constexpr char number = '8';	//t.kind == number means that t is a number Token
+constexpr char quit = 'q';	//t.kind == quit means that t is a quit Token
+constexpr char print = ';';	//t.kind == print means that t is a print Token
+constexpr string prompt = "> ";
+constexpr string result = "= ";	//used to indicate that what follows is a result
+//-----------------------------------------------------------------------
+
 class Token
 {
 	public:
@@ -86,7 +93,7 @@ Token Token_stream::get()
 			cin.putback(ch);	//put digit back into the input stream
 			double val=0;		 
 			cin >> val;		//read a floating-point number
-			return Token{'8', val};	//let '8' represent "a number"
+			return Token{number, val};
 		}
 		default:
 			error("Bad token");
@@ -122,8 +129,8 @@ double primary()
 				error("')' expected !");
 			return d;
 		}
-		case '8':	// we use '8' to represent number
-			return t.value;
+		case number:
+			return t.value;		//return the number's value
 		case '-':
 			return - primary();
 		case '+':
@@ -217,14 +224,14 @@ try
 	double val = 0;
 	while(cin)
 	{
-		cout << "> ";		//print promt
+		cout << prompt;		//print promt
 		Token t = ts.get();
-		while(t.kind == ';')
+		while(t.kind == print)
 			t = ts.get();	//eat ';'
-		if(t.kind == 'q')	//'q' for quit
+		if(t.kind == quit)	//'q' for quit
 			 return 0;
 		ts.putback(t);
-		cout << "= " << expression() << '\n';
+		cout << result << expression() << '\n';
 	}
 	return 0;
 }
