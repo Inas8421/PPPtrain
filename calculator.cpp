@@ -64,6 +64,7 @@ class Token_stream
 		Token_stream();		//make a Token_stream that reads from cin
 		Token get();		//get a Token
 		void putback(Token t);	//put a Token back
+		void ignore(char c);	//discard characters up to and including a c
 	private:
 		bool full = false;	//is there a Token in buffer?
 		Token buffer;		//here is where we keep a Token put back
@@ -90,6 +91,27 @@ void Token_stream::putback(Token t)
 
 //--------------------------------------------------------------------------
 
+//The ignore(char c) member function discards characters up to and including a c
+void Token_stream::ignore(char c)		//c represents the kind of Token
+{
+	if(full && c == buffer.kind)		//first look in buffer
+	{
+		full = false;
+		return;
+	}
+
+	full = false;
+
+	//now search input:
+	char ch = 0;
+	while(cin >> ch)
+		if(ch == c)
+			return;	
+}
+
+//--------------------------------------------------------------------------
+
+//The get() member function
 Token Token_stream::get()
 {
 	if(full)	//do we already have a Token ready?
@@ -254,10 +276,19 @@ double expression()
 
 //----------------------------------------------------------------
 
+//Error handling
+void clean_up_mess()
+{
+	ts.ignore(print);
+}
+
+//----------------------------------------------------------------
+
 //Calculation loop
 void calculate()
 {
 	while(cin)
+	try
 	{
 		cout << prompt;		//print promt
 		Token t = ts.get();
@@ -267,6 +298,11 @@ void calculate()
 			 return;
 		ts.putback(t);
 		cout << result << expression() << '\n';
+	}
+	catch(exception& e)
+	{
+		cerr << "calculate() error: " << e.what() << '\n';
+		clean_up_mess();
 	}
 }
 
