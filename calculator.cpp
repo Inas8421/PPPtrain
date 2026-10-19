@@ -5,10 +5,16 @@
 	Input from cin; output to cout.
 	The grammar for input is:
 
-	Statement:
-		Expression
+	Calculation:
+		Statement
 		Print
 		Quit
+		Calculation Statement
+	Statement:
+		Declaration
+		Expression
+	Declaration:
+		"let" Name "=" Expression
 	Print:
 		";"
 	Quit:
@@ -40,6 +46,10 @@
 constexpr char number = '8';	//t.kind == number means that t is a number Token
 constexpr char quit = 'q';	//t.kind == quit means that t is a quit Token
 constexpr char print = ';';	//t.kind == print means that t is a print Token
+constexpr char let = 'L';	//declaration token
+constexpr char name = 'a';	//name token
+
+constexpr string declkey = "let";//declaration keyword;
 constexpr string prompt = "> ";
 constexpr string result = "= ";	//used to indicate that what follows is a result
 
@@ -48,12 +58,13 @@ constexpr string result = "= ";	//used to indicate that what follows is a result
 class Token
 {
 	public:
-		char kind;			// what kind of token
-		double value;			// for numbers: a value
-		Token(char ch)			// make a Token from a char
-			:kind(ch), value(0){}
-		Token(char ch, double val)	//make a Token from a char and a double
-			:kind(ch), value(val){}
+		char kind;						//what kind of token
+		double value;						//for numbers: a value
+		string name;						//for Variables: name
+		Token():kind{0}{}					//default constructor
+		Token(char ch):kind{ch}{}				//initialize kind with ch	
+		Token(char ch, double val):kind{ch}, value{val}{}	//initialize kind and value
+		Token(char ch, string n):kind{ch}, name{n}{}		//initialize kind and name
 };
 
 //-------------------------------------------------------------------------
@@ -68,6 +79,15 @@ class Token_stream
 	private:
 		bool full = false;	//is there a Token in buffer?
 		Token buffer;		//here is where we keep a Token put back
+};
+
+//-------------------------------------------------------------------------
+
+class Variable
+{
+	public:
+		string name;
+		double value;
 };
 
 //-------------------------------------------------------------------------
@@ -135,6 +155,7 @@ Token Token_stream::get()
 		case '*':
 		case '/':
 		case '%':
+		case '=':	//possible
 			return Token{ch}; //let each character represent itself
 		case '.':	//a floating-point literal can start with a dot
 		case '0':
@@ -154,9 +175,22 @@ Token Token_stream::get()
 			return Token{number, val};
 		}
 		default:
+			if(isalpha(ch))
+			{
+				string s;
+				s+=ch;
+				while(cin.get(ch) && (isalpha(ch) || isdigit(ch)))
+					s+=ch;
+
+				cin.putback(ch);
+				if(s == declkey)
+					return Token{let};	//declaration keyword
+				return Token{name, s};
+			}			
+
+			//TODO:compilation warning here, because of no return value
 			error("Bad token");
-		//compilation warning here, because of no return value
-	}
+		}
 }
 
 //-----------------------------------------------------------------
@@ -169,9 +203,61 @@ double expression();	//read and evaluate an Expression
 
 //----------------------------------------------------------
 
-//double term();		//read and evaluate a Term
+vector<Variable> var_table;	//provides storage of variables
 
-//----------------------------------------------------------
+//----------------------------------------------------------------------
+
+//Search Variable for a given name by looking elements one after another
+double get_value(string s)
+{
+	for(const Variable& v : var_table)
+		if(v.name == s)
+			return v.value;
+
+	//TODO:compilation warning here, because of no return value
+	error("trying to read undefined variable ", s);
+} 
+
+//----------------------------------------------------------------------
+
+//Set new value for Variable
+void set_value(string s, double d)
+{
+	for(Variable& v : var_table)
+		if(v.name == s)
+		{
+			v.value = d;
+			return;
+		}
+
+	error("trying to write undefined variable", s);
+}
+
+//----------------------------------------------------------------------
+
+//Is Variable already in var_table?
+bool is_declared(string var)
+{
+	for(const Variable& v : var_table)
+		if(v.name == var)
+			return true;
+
+	return false;
+}
+
+//----------------------------------------------------------------------
+
+//Add new Variable to var_table
+double define_name(string var, double val)
+{
+	if(is_declared(var))
+		error(var, " declared twice");
+
+	var_table.push_back(Variable{var, val});
+	return val;
+}
+
+//----------------------------------------------------------------------
 
 //Deal with numbers and parentheses
 double primary() 
@@ -193,9 +279,11 @@ double primary()
 			return - primary();
 		case '+':
 			return primary();
+		case name:
+			return get_value(t.name);
 		default:
 			error("primary expected !");
-			//compilation warning here, because of no return value
+			//TODO:compilation warning here, because of no return value
 	}
 }
 
@@ -284,6 +372,10 @@ void clean_up_mess()
 
 //----------------------------------------------------------------
 
+double statement();
+
+//----------------------------------------------------------------
+
 //Calculation loop
 void calculate()
 {
@@ -297,7 +389,7 @@ void calculate()
 		if(t.kind == quit)	//'q' for quit
 			 return;
 		ts.putback(t);
-		cout << result << expression() << '\n';
+		cout << result << statement() << '\n';
 	}
 	catch(exception& e)
 	{
@@ -306,7 +398,50 @@ void calculate()
 	}
 }
 
-//----------------------------------------------------------------
+//---------------------------------------------------------------------
+
+double declaration();
+
+//----------------------------------------------------------------------
+
+double define_name(string var, double val);
+
+//----------------------------------------------------------------------
+//asume we have seen "let"
+//handle: name = expression
+//declare a variable called "name" with the initial value "expression"
+double declaration()
+{
+	Token t = ts.get();
+	if(t.kind != name)
+		error("name expected in declaration");
+
+	Token t2 = ts.get();
+	if(t2.kind != '=')
+		error("= missing in declaration of ", t.name);
+
+	double d = expression();
+	define_name(t.name, d);
+	
+	return d;
+}
+
+//----------------------------------------------------------------------
+
+double statement()
+{
+	Token t = ts.get();
+	switch(t.kind)
+	{
+		case let:
+			return declaration();
+		default:
+			ts.putback(t);
+			return expression();
+	}
+}
+
+//----------------------------------------------------------------------
 
 int main()
 try
