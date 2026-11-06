@@ -195,11 +195,7 @@ Token Token_stream::get()
 
 //-----------------------------------------------------------------
 
-Token_stream ts;	//provides get() and putback()
-
-//----------------------------------------------------------
-
-double expression();	//read and evaluate an Expression
+double expression(Token_stream& ts);	//read and evaluate an Expression
 
 //----------------------------------------------------------
 
@@ -260,14 +256,14 @@ double define_name(string var, double val)
 //----------------------------------------------------------------------
 
 //Deal with numbers and parentheses
-double primary() 
+double primary(Token_stream& ts) 
 {
 	Token t = ts.get();
 	switch(t.kind)
 	{
 		case '(':	//handle '(' expression ')'
 		{
-			double d = expression();
+			double d = expression(ts);
 			t = ts.get();
 			if(t.kind != ')')
 				error("')' expected !");
@@ -276,9 +272,9 @@ double primary()
 		case number:
 			return t.value;		//return the number's value
 		case '-':
-			return - primary();
+			return - primary(ts);
 		case '+':
-			return primary();
+			return primary(ts);
 		case name:
 			return get_value(t.name);
 		default:
@@ -290,21 +286,21 @@ double primary()
 //------------------------------------------------------------
 
 //Deal with *, /, and %
-double term()
+double term(Token_stream& ts)
 {
-	double left = primary();
+	double left = primary(ts);
 	Token t = ts.get();	//get the next token from token stream
 	while(true)
 	{
 		switch(t.kind)
 		{
 			case '*':
-				left *= primary();
+				left *= primary(ts);
 				t = ts.get();
 				break;
 			case '/':
 			{
-				double d = primary();
+				double d = primary(ts);
 				if(d == 0)
 					error("division by zero !");
 				left /= d;
@@ -313,7 +309,7 @@ double term()
 			}
 			case '%':
 			{
-				double d = primary();
+				double d = primary(ts);
 				if(d == 0)
 					error("%: division by zero !");
 				left = fmod(left, d);
@@ -337,20 +333,20 @@ double term()
 //--------------------------------------------------------------
 
 //Deal with + and -
-double expression()
+double expression(Token_stream& ts)
 {
-	double left = term();	//read and evaluate a Term
+	double left = term(ts);	//read and evaluate a Term
 	Token t = ts.get();	//get the next token
 	while(true)
 	{
 		switch(t.kind)
 		{
 			case '+':
-				left += term();	//evaluate term and add
+				left += term(ts);	//evaluate term and add
 				t = ts.get();
 				break;
 			case '-':
-				left -= term();	//evaluate term and substract
+				left -= term(ts);	//evaluate term and substract
 				t = ts.get();
 				break;
 			default:
@@ -365,19 +361,19 @@ double expression()
 //----------------------------------------------------------------
 
 //Error handling
-void clean_up_mess()
+void clean_up_mess(Token_stream& ts)
 {
 	ts.ignore(print);
 }
 
 //----------------------------------------------------------------
 
-double statement();
+double statement(Token_stream& ts);
 
 //----------------------------------------------------------------
 
 //Calculation loop
-void calculate()
+void calculate(Token_stream& ts)
 {
 	while(cin)
 	try
@@ -389,18 +385,18 @@ void calculate()
 		if(t.kind == quit)	//'q' for quit
 			 return;
 		ts.putback(t);
-		cout << result << statement() << '\n';
+		cout << result << statement(ts) << '\n';
 	}
 	catch(exception& e)
 	{
 		cerr << "calculate() error: " << e.what() << '\n';
-		clean_up_mess();
+		clean_up_mess(ts);
 	}
 }
 
 //---------------------------------------------------------------------
 
-double declaration();
+double declaration(Token_stream& ts);
 
 //----------------------------------------------------------------------
 
@@ -410,7 +406,7 @@ double define_name(string var, double val);
 //asume we have seen "let"
 //handle: name = expression
 //declare a variable called "name" with the initial value "expression"
-double declaration()
+double declaration(Token_stream& ts)
 {
 	Token t = ts.get();
 	if(t.kind != name)
@@ -420,7 +416,7 @@ double declaration()
 	if(t2.kind != '=')
 		error("= missing in declaration of ", t.name);
 
-	double d = expression();
+	double d = expression(ts);
 	define_name(t.name, d);
 	
 	return d;
@@ -428,16 +424,16 @@ double declaration()
 
 //----------------------------------------------------------------------
 
-double statement()
+double statement(Token_stream& ts)
 {
 	Token t = ts.get();
 	switch(t.kind)
 	{
 		case let:
-			return declaration();
+			return declaration(ts);
 		default:
 			ts.putback(t);
-			return expression();
+			return expression(ts);
 	}
 }
 
@@ -450,7 +446,9 @@ try
 	define_name("pi", 3.1415926535);
 	define_name("e", 2.7182818284);
 
-	calculate();
+	Token_stream ts;
+
+	calculate(ts);
 	return 0;
 }
 catch(exception& e)
