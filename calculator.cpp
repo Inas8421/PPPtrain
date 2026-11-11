@@ -39,7 +39,7 @@
 	Input comes from cin through the Token_stream called ts.
 */
 
-#include "PPPheaders.h"
+#include "token.h"
 
 //-----------------------------------------------------------------------
 
@@ -55,143 +55,12 @@ constexpr string result = "= ";	//used to indicate that what follows is a result
 
 //-----------------------------------------------------------------------
 
-class Token
-{
-	public:
-		char kind;						//what kind of token
-		double value;						//for numbers: a value
-		string name;						//for Variables: name
-		Token():kind{0}{}					//default constructor
-		Token(char ch):kind{ch}{}				//initialize kind with ch	
-		Token(char ch, double val):kind{ch}, value{val}{}	//initialize kind and value
-		Token(char ch, string n):kind{ch}, name{n}{}		//initialize kind and name
-};
-
-//-------------------------------------------------------------------------
-
-class Token_stream
-{
-	public:
-		Token_stream();		//make a Token_stream that reads from cin
-		Token get();		//get a Token
-		void putback(Token t);	//put a Token back
-		void ignore(char c);	//discard characters up to and including a c
-	private:
-		bool full = false;	//is there a Token in buffer?
-		Token buffer;		//here is where we keep a Token put back
-};
-
-//-------------------------------------------------------------------------
-
 class Variable
 {
 	public:
 		string name;
 		double value;
 };
-
-//-------------------------------------------------------------------------
-
-//The constructor just sets full to indicate that the buffer is empty
-Token_stream::Token_stream()
-	:full(false), buffer(0)	//no Token in buffer
-{}
-
-//--------------------------------------------------------------------------
-
-//The putback() member function puts its argument back into the Token_stream's buffer
-void Token_stream::putback(Token t)
-{
-	if(full)
-		error("putback() into a full buffer");
-
-	buffer = t;		//copy t to buffer
-	full = true;		//buffer is now full
-}
-
-//--------------------------------------------------------------------------
-
-//The ignore(char c) member function discards characters up to and including a c
-void Token_stream::ignore(char c)		//c represents the kind of Token
-{
-	if(full && c == buffer.kind)		//first look in buffer
-	{
-		full = false;
-		return;
-	}
-
-	full = false;
-
-	//now search input:
-	char ch = 0;
-	while(cin >> ch)
-		if(ch == c)
-			return;	
-}
-
-//--------------------------------------------------------------------------
-
-//The get() member function
-Token Token_stream::get()
-{
-	if(full)	//do we already have a Token ready?
-	{
-		//remove Token from buffer
-		full = false;
-		return buffer;
-	}
-
-	char ch;
-	if(!(cin >> ch))	//note that >> skips whitespace (space, newline, tab
-		error("no input");
-	switch(ch)
-	{
-		case print: //for "print"
-		case quit: //for "quit"
-		case '(':
-		case ')':
-		case '+':
-		case '-':
-		case '*':
-		case '/':
-		case '%':
-		case '=':	//possible
-			return Token{ch}; //let each character represent itself
-		case '.':	//a floating-point literal can start with a dot
-		case '0':
-		case '1':
-		case '2':
-		case '3':
-		case '4':
-		case '5':
-		case '6':
-		case '7':
-		case '8':
-		case '9':
-		{
-			cin.putback(ch);	//put digit back into the input stream
-			double val=0;		 
-			cin >> val;		//read a floating-point number
-			return Token{number, val};
-		}
-		default:
-			if(isalpha(ch))
-			{
-				string s;
-				s+=ch;
-				while(cin.get(ch) && (isalpha(ch) || isdigit(ch)))
-					s+=ch;
-
-				cin.putback(ch);
-				if(s == declkey)
-					return Token{let};	//declaration keyword
-				return Token{name, s};
-			}			
-
-			//TODO:compilation warning here, because of no return value
-			error("Bad token");
-		}
-}
 
 //-----------------------------------------------------------------
 

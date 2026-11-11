@@ -147,14 +147,14 @@ namespace PPP {
 
 //------- random numbers ------
 
-	std::default_random_engine& get_rand()
+	inline std::default_random_engine& get_rand()
 	{
 		static std::default_random_engine ran;
 		return ran;
 	};
 
-	void seed(int s) { get_rand().seed(s); }
-	void seed() { get_rand().seed(); }
+	inline void seed(int s) { get_rand().seed(s); }
+	inline void seed() { get_rand().seed(); }
 
 	inline int random_int(int min, int max) { return std::uniform_int_distribution<>{min, max}(get_rand()); }
 
