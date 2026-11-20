@@ -1,5 +1,10 @@
 #include "PPPheaders.h"
 
+struct Year
+{
+	int y;
+};
+
 enum class Month
 {
 	jan=1, feb, mar, apr, may, jun, jul, aug, sep, oct, nov, dec
@@ -11,18 +16,18 @@ class Date
 	public:
 		class Invalid { };
 
-		Date(int y, Month m, int d);	//constructor: check for valid date and initialize
+		Date(Year y, Month m, int d);	//constructor: check for valid date and initialize
 		
 		void add_day(int n);		//increase the Date by n days
 
-		Month month(){return m;}
+		Month month()const{return m;}
 
-		int day(){return d;}
+		int day()const{return d;}
 			
-		int year(){return y;}
+		Year year()const{return y;}
 
 	private:
-		int y;				//year
+		Year y;				//year
 		Month m;			//month
 		int d;				//day
 		

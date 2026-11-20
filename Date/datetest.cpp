@@ -1,3 +1,4 @@
+#include <chrono>
 #include "date.h"
 
 vector<string> month_tbl = 
@@ -11,8 +12,12 @@ int to_int(Month m)
 
 Month operator++(Month& m)
 {
-	m= (m == Month::dec) ? Month::jan : Month{to_int(m)+1};
+	m = (m == Month::dec) ? Month::jan : Month{to_int(m)+1};
 	return m;
+}
+ostream& operator<<(ostream& os, Year y)
+{
+	return os << y.y;
 }
 
 ostream& operator<<(ostream& os, Month m)
@@ -28,10 +33,19 @@ ostream& operator<<(ostream& os, Date d)
 int main()
 try
 {
-	Date date {2026, Month::jun, 17};
+	Date date {Year{2027}, Month::jun, 17};
+
 	cout << date << '\n';
-	date.add_day(2);
-	cout << date << '\n';
+
+//	date.add_day(2);
+
+	const Date cdate {Year{2026}, Month::nov, 20};
+
+	cout << cdate << '\n';
+
+	auto chdate = std::chrono::December/16/1770;
+
+	cout << chdate << '\n';
 }
 catch(Date::Invalid)
 {
